@@ -3,40 +3,56 @@ open System.IO;
 open System.Collections.Generic;
 open System.Linq;
 
-let file = @"X:\F#\FileFixIt\tests\sample.txt"
-let lines = File.ReadAllLines file
+let relativePath = @"C:\Gits\FSharpFirstSteps\FileFixIt\tests\sample.txt"
+let lines = 
+    File.ReadAllLines relativePath
 
 let numberOfTests = lines.[0]
 
 type TestSource  = { ExistingDirectories : string[] ; PotentialNewDirectories : string[]}
 
-
-let readTestCase (lines : IEnumerable<string>) =
+let rec readTestCasesRec (lines : IEnumerable<string>) : IEnumerable<TestSource> =
     let header = lines.First().Split(' ');
     let numberOfExistingDirectories = Int32.Parse(header.[0])
     let numberOfNewDirectories = Int32.Parse(header.[1])
     let exisiting = lines.Skip(1).Take(numberOfExistingDirectories).ToArray()
     let newDirectories = lines.Skip(1+numberOfExistingDirectories).Take(numberOfNewDirectories).ToArray()
-    (
-        1+numberOfExistingDirectories+numberOfNewDirectories,
-        {
-            ExistingDirectories = exisiting;
-            PotentialNewDirectories = newDirectories;
-        }
-    )
+    let testCase =  {ExistingDirectories = exisiting; PotentialNewDirectories = newDirectories;}
+    let remainingLines = lines.Skip(1 + numberOfExistingDirectories + numberOfNewDirectories)
+    if remainingLines.Any()
+        then 
+            let testCases = readTestCasesRec remainingLines
+            seq [testCase] |> Seq.append testCases
+        else seq [testCase]
 
 
 let readTestCases (lines : string[]) =
-    let numberOfTestCases = Int32.Parse(lines.First())
-    let result = new List<TestSource>();
-    let remaining = lines
-    for i=0 to numberOfTestCases do
-        let intermediate = readTestCase(lines.Skip(1));
-        result.Add(snd intermediate)
-        remaining <| lines.Skip(fst intermediate)
-        ignore
+    (readTestCasesRec (lines.Skip(1))).ToArray()
 
-    " "
+let solve (test : TestSource) =
+    let lookup = List<string>()
+    for path in test.ExistingDirectories do
+        let parts = path.Split('/')
+        for part in parts do
+            if (lookup.Contains(part))
+                then do lookup.Add(part)     
+    let mutable count = 0
+    for path in test.PotentialNewDirectories do
+        let parts = path.Split('/')
+        for part in parts do
+            if(lookup.Contains(part))
+                then 
+                    count = count+1;
+                    do lookup.Add(part)
 
-        
+    
+    count
 
+let solveAll (tests : IEnumerable<TestSource>) =
+    tests
+    |> Seq.map solve
+    |> Seq.iter (fun x -> printf "%i" x)
+
+let allTestCases = readTestCases lines
+
+solveAll allTestCases
