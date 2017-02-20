@@ -19,13 +19,15 @@ let getAllDirectories (path :string) =
     getSubPath (partsOfPath.Skip(1), "/"+partsOfPath.First())
 
 
-//let relativePath = @"C:\Gits\FSharpFirstSteps\FileFixIt\tests\sample.txt"
-let relativePath = @"X:\FSharpFirstSteps\FileFixIt\tests\sample.txt"
+let pathToTests = @"C:\Gits\FSharpFirstSteps\FileFixIt\tests\"
+let currentFile = @"A-large-practice.in"
+//let pathToTests = @"X:\FSharpFirstSteps\FileFixIt\tests\sample.txt"
 
 
 
 let lines = 
-    File.ReadAllLines relativePath
+    let fullPath = Path.Combine (pathToTests, currentFile)
+    File.ReadAllLines fullPath
 
 let numberOfTests = lines.[0]
 
@@ -79,10 +81,16 @@ let solve (test : TestSource) =
         |> Seq.sum
     
 let solveAll (tests : IEnumerable<TestSource>) =
+    let fullPath = Path.Combine(pathToTests, currentFile+".result.txt")
+    use writer = new StreamWriter(new FileStream(fullPath, FileMode.Create))
     tests
     |> Seq.map solve
-    |> Seq.map (fun x -> printf "Case #i: %i \r\n" x)
-    |> Seq.iter (fun x -> printf "")
+    |> Seq.iteri (fun i x -> 
+        let result = "Case #"+(i+1).ToString()+": "+x.ToString()
+        writer.WriteLine result
+        ignore writer.Flush 
+    )
+    
 
 let allTestCases = readTestCases lines
 
