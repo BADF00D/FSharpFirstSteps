@@ -20,8 +20,7 @@ let getAllDirectories (path :string) =
     getSubPath (partsOfPath.Skip(1), "/"+partsOfPath.First())
 
 
-//let pathToTests = @"C:\Gits\FSharpFirstSteps\FileFixIt\tests\"
-let pathToTests = @"C:\Git\FSharpFirstSteps\FileFixIt\tests"
+let pathToTests = @"C:\Gits\FSharpFirstSteps\FileFixIt\tests\"
 let currentFile = @"A-large-practice.in"
 //let pathToTests = @"X:\FSharpFirstSteps\FileFixIt\tests\sample.txt"
 
@@ -85,14 +84,13 @@ let solve (test : TestSource) =
     test.PotentialNewDirectories
         |> Seq.map getAllDirectories
         |> Seq.collect (fun x -> seq { for i in x do yield i})
-        |> Seq.map (fun dir -> 
-            if not (lookup.Contains(dir))
-                    then 
-                        do lookup.Add(dir)
-                        1
-                    else
-                        0)
-        |> Seq.sum
+        |> Seq.fold (fun (lookup', counter) item -> 
+                        match (lookup' |> List.contains item) with
+                        | true -> (lookup', counter)
+                        | false -> (item :: lookup', counter + 1)
+                    )
+                    (lookup |> List.ofSeq, 0)
+        |> fun (_, counter) -> counter
     
 let solveAll (tests : TestSource seq) =
     let fullPath = Path.Combine(pathToTests, currentFile+".result.txt")
